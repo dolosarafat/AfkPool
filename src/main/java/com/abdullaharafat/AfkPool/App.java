@@ -53,7 +53,7 @@ public class App extends JavaPlugin {
     }
 
     private void checkAfkPlayers() {
-        Essentials ess = (Essentials) Bukkit.getServer().getPluginManager().getPlugin("Essentials");
+        Essentials ess = (Essentials) Bukkit.getServer().getPluginManager().getPlugin("EssentialsX");
         // Get all online players
         for (Player player : Bukkit.getOnlinePlayers()) {
             // Check if the player is AFK using EssentialsX method

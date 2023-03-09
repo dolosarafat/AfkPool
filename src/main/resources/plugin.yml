@@ -1,4 +1,4 @@
-name: PluginDemo
+name: AfkPool
 main: com.abdullaharafat.AfkPool.App
 description: A plugin that rewards AFK players in a specific region
 version: ${project.version}
