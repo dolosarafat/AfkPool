@@ -31,9 +31,6 @@ public class App extends JavaPlugin {
     @Override
     public void onEnable() {
         getLogger().info("AfkPool Version 1.0.4 enabled.");
-        // Get an instance of WorldGuard plugin
-        worldGuard = (WorldGuardPlugin) getServer().getPluginManager().getPlugin("WorldGuard");
-
         // Load the config values from config.yml or use default values
         regionName = getConfig().getString("region-name", "afk-zone");
         crateInterval = getConfig().getLong("crate-interval", 24000); // 20 minutes
@@ -53,7 +50,10 @@ public class App extends JavaPlugin {
 
     private void checkAfkPlayers() {
     Essentials ess = (Essentials) Bukkit.getServer().getPluginManager().getPlugin("EssentialsX");
+    // Get an instance of WorldGuard plugin
+    worldGuard = (WorldGuardPlugin) getServer().getPluginManager().getPlugin("WorldGuard");
     if (ess != null)
+    if(worldGuard != null)
         // Get all online players
         for (Player player : Bukkit.getOnlinePlayers()) {
             // Check if the player is AFK using EssentialsX method
