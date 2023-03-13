@@ -1,119 +1,127 @@
 package com.abdullaharafat.AfkPool;
 
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
-import net.md_5.bungee.api.ChatColor;
-import java.util.concurrent.ThreadLocalRandom;
-
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
+// import java.util.Iterator;
+import java.util.concurrent.ThreadLocalRandom;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
-import com.earth2me.essentials.Essentials;
-// import com.earth2me.essentials.User;
+import org.bukkit.command.CommandSender;
+import org.bukkit.metadata.MetadataValue;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.world.World;
 import com.sk89q.worldguard.WorldGuard;
+import net.md_5.bungee.api.ChatColor;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.Bukkit;
+import com.earth2me.essentials.Essentials;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 public class App extends JavaPlugin {
+    public WorldGuardPlugin worldGuard;
+    public String regionName;
+    public long crateInterval;
+    public long moneyInterval;
 
-    public WorldGuardPlugin worldGuard; // A reference to WorldGuard plugin
-    public String regionName; // The name of the AFK zone region
-    public long crateInterval; // The interval for giving crate keys (in ticks)
-    public long moneyInterval; // The interval for giving money (in ticks)
-
-    @Override
     public void onEnable() {
-        getLogger().info("AfkPool Version 1.0.5 enabled.");
-        // Load the config values from config.yml or use default values
-        regionName = getConfig().getString("region-name", "afk");
-        crateInterval = getConfig().getLong("crate-interval", 24000); // 20 minutes
-        moneyInterval = getConfig().getLong("money-interval", 600); // 30 seconds
-
-        // Save the config if it does not exist
-        saveDefaultConfig();
-
-        // Get an instance of Essentials plugin
-        Essentials ess = (Essentials) Bukkit.getServer().getPluginManager().getPlugin("Essentials");
-        // Check if WorldGuard and EssentialsX are enabled
+        this.getLogger().info("AfkPool Version 1.0.6 enabled.");
+        this.regionName = this.getConfig().getString("region-name", "afk");
+        this.crateInterval = this.getConfig().getLong("crate-interval", 24000L);
+        this.moneyInterval = this.getConfig().getLong("money-interval", 600L);
+        this.saveDefaultConfig();
+        final Essentials ess = (Essentials) Bukkit.getServer().getPluginManager().getPlugin("Essentials");
         if (ess != null && Bukkit.getServer().getPluginManager().isPluginEnabled("WorldGuard")) {
-            // Get an instance of WorldGuard plugin
-            worldGuard = (WorldGuardPlugin) getServer().getPluginManager().getPlugin("WorldGuard");
-            // Start a repeating task that checks for AFK players every second
-            Bukkit.getScheduler().runTaskTimer(this, this::checkAfkPlayers, 0L, 20L);
+            this.worldGuard = (WorldGuardPlugin) this.getServer().getPluginManager().getPlugin("WorldGuard");
+
+            Object task = Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+                @Override
+                public void run() {
+                    checkAfkPlayers();
+                }
+            }, 0L, 20L);
+            this.getLogger().info("Task is running");
+            if (task != null) {
+                ((BukkitTask) task).cancel();
+                this.getLogger().info("Task killed");
+            }
+
         } else {
-            // Print an error message if either plugin is not enabled
-            getLogger().severe("EssentialsX and/or WorldGuard not found or not enabled. Disabling AfkPool.");
-            Bukkit.getPluginManager().disablePlugin(this);
+            this.getLogger().severe("EssentialsX and/or WorldGuard not found or not enabled. Disabling AfkPool.");
+            Bukkit.getPluginManager().disablePlugin((Plugin) this);
         }
     }
 
-    @Override
     public void onDisable() {
-        getLogger().info("AfkPool Disabled");
+        this.getLogger().info("AfkPool Disabled");
     }
 
     void checkAfkPlayers() {
-        Essentials ess = (Essentials) Bukkit.getServer().getPluginManager().getPlugin("Essentials");
-        // Get all online players
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            // Check if the player is AFK using EssentialsX method
+        final Essentials ess = (Essentials) Bukkit.getServer().getPluginManager().getPlugin("Essentials");
+        for (final Player player : Bukkit.getOnlinePlayers()) {
             if (ess.getUser(player).isAfk()) {
-                // Get the player's location
-                Location location = player.getLocation();
-                // Get the region container from WorldGuard
-                RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-                // Get the region manager for the player's world
-
-                // RegionManager regions =
-                // container.get(BukkitAdapter.adapt(player.getWorld()));
-                // // Get the region by name
-                // ProtectedRegion region = regions.getRegion(regionName);
-                // // Check if the region exists and contains the player's location
-
-                RegionManager regions = container.get(BukkitAdapter.adapt(player.getWorld()));
+                player.sendTitle(ChatColor.WHITE + "AfkPool will be handling your " + ChatColor.BLUE + "AFK Status",
+                        (String) null, 10, 70, 20);
+                final Location location = player.getLocation();
+                final RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+                final World world = (World) player.getWorld();
+                final RegionManager regions = container.get((World) BukkitAdapter.adapt(world));
+                this.getLogger().info("Got players world, world is " + player.getWorld());
                 if (regions != null) {
-                    ProtectedRegion region = regions.getRegion(regionName);
+                    final ProtectedRegion region = regions.getRegion(this.regionName);
+
+                    if (regions == null || region == null) {
+                        this.getLogger().warning("No regions found or region is null");
+                        continue;
+                    }
 
                     if (region != null
                             && region.contains(location.getBlockX(), location.getBlockY(), location.getBlockZ())) {
-                        // Check if the player is a member of the region
-                        if (region.getMembers().contains(player.getName())) {
-                            // Give rewards to the player based on intervals
-                            long currentTime = System.currentTimeMillis() / 50;
-                            long crateTime = player.getMetadata("crate-time").isEmpty() ? 0L
-                                    : player.getMetadata("crate-time").get(0).asLong();
-                            long moneyTime = player.getMetadata("money-time").isEmpty() ? 0L
-                                    : player.getMetadata("money-time").get(0).asLong();
-
-                            // Check if the crate interval has passed since the last reward
-                            if (currentTime - crateTime >= crateInterval) {
-                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-                                        "crate give " + player.getName() + " afk");
-                                player.sendMessage("You have received an AFK crate key!");
-                                player.setMetadata("crate-time", new FixedMetadataValue(this, currentTime));
-                            }
-
-                            // Check if the money interval has passed since the last reward
-                            if (currentTime - moneyTime >= moneyInterval) {
-                                int money = ThreadLocalRandom.current().nextInt(30, 101);
-                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-                                        "eco give " + player.getName() + " " + money);
-                                player.sendMessage("You have received " + money + " money!");
-                                player.setMetadata("money-time", new FixedMetadataValue(this, currentTime));
-                            }
-
-                            // Show a title to the player when they enter the 'afk' region
-                            if (regionName.equals("afk") && !player.hasMetadata("afk-zone-entered")) {
-                                player.sendTitle(
-                                        ChatColor.WHITE + "You have entered the " + ChatColor.BLUE + "AFK zone",
-                                        null, 10, 70, 20);
-                                player.setMetadata("afk-zone-entered", new FixedMetadataValue(this, true));
-                            }
+                        if (!region.getMembers().contains(player.getName())) {
+                            continue;
                         }
+                        final long currentTime = System.currentTimeMillis() / 50L;
+                        final long crateTime = player.getMetadata("crate-time").isEmpty() ? 0L
+                                : player.getMetadata("crate-time").get(0).asLong();
+                        final long moneyTime = player.getMetadata("money-time").isEmpty() ? 0L
+                                : player.getMetadata("money-time").get(0).asLong();
+                        if (currentTime - crateTime >= this.crateInterval) {
+                            Bukkit.dispatchCommand((CommandSender) Bukkit.getConsoleSender(),
+                                    "crate give " + player.getName() + " afk");
+                            player.sendMessage("You have received an AFK crate key!");
+                            player.setMetadata("crate-time",
+                                    (MetadataValue) new FixedMetadataValue((Plugin) this, (Object) currentTime));
+                        }
+
+                        if (regions == null || region == null) {
+                            this.getLogger().warning("No regions found or region is null");
+                        }
+
+                        if (currentTime - moneyTime >= this.moneyInterval) {
+                            final int money = ThreadLocalRandom.current().nextInt(30, 101);
+                            Bukkit.dispatchCommand((CommandSender) Bukkit.getConsoleSender(),
+                                    "eco give " + player.getName() + " " + money);
+                            player.sendMessage("You have received " + money + " money!");
+                            player.setMetadata("money-time",
+                                    (MetadataValue) new FixedMetadataValue((Plugin) this, (Object) currentTime));
+                        }
+                        if (!this.regionName.equals("afk") || player.hasMetadata("afk-zone-entered")) {
+                            continue;
+                        }
+                        player.sendTitle(ChatColor.WHITE + "You have entered the " + ChatColor.BLUE + "AFK zone",
+                                (String) null, 10, 70, 20);
+                        player.setMetadata("afk-zone-entered",
+                                (MetadataValue) new FixedMetadataValue((Plugin) this, (Object) true));
+                    } else {
+                        this.getLogger().severe("There is no region");
+                        this.onEnable();
                     }
+                } else {
+                    this.getLogger().severe("There is not any regions");
+                    this.onEnable();
                 }
             }
         }

@@ -26,7 +26,7 @@ public class App extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getLogger().info("AfkPool Version 1.0.5 enabled.");
+        getLogger().info("AfkPool Version 1.0.6 enabled.");
         // Load the config values from config.yml or use default values
         regionName = getConfig().getString("region-name", "afk");
         crateInterval = getConfig().getLong("crate-interval", 24000); // 20 minutes

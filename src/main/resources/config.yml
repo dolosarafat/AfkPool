@@ -1,6 +1,9 @@
-region-name: afk #WorldGuard region name here
-crate-interval: 24000 #<-- This (Default Value) is 20 mins
-money-interval: 600 #<-- This (Default Value) is 30 seconds
+# region-name: afk #WorldGuard region name here
+# crate-interval: 24000 #<-- This (Default Value) is 20 mins
+# money-interval: 600 #<-- This (Default Value) is 30 seconds
+
+# Uncomment the 3 lines above to make changes
+
 
 #Made by Abdullah :)
 # ██╗░░░██╗░█████╗░██████╗░██████╗░██╗░░░██╗██╗░░░░░██╗░░░░░  ███╗░░░███╗░█████╗░
